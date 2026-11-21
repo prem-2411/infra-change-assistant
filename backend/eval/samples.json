@@ -1,0 +1,242 @@
+[
+  {
+    "type": "add_server",
+    "target": "dev-sandbox-vm-07",
+    "justification": "Spin up a dev VM from the approved hardened image for the payments team's feature branch testing. Owner: payments-dev, cost center CC-4412, registered in the inventory.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "add_server",
+    "target": "staging-worker-03",
+    "justification": "Add a staging worker using the hardened base image to run nightly integration tests. Tagged owner platform-qa, cost center CC-1180, inventory entry created.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "change_config",
+    "target": "dev API gateway log level",
+    "justification": "Raise the log level from WARN to INFO on the dev API gateway to debug a flaky test. Peer reviewed in PR 482 and tested in staging first.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "grant_access",
+    "target": "staging-metrics dashboard (read-only)",
+    "justification": "Grant analyst Priya read-only access to the staging metrics dashboard for 30 days to validate reports. Manager approved.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "open_port",
+    "target": "dev-sandbox-vm-07:8080",
+    "justification": "Open TCP 8080 from the internal office VPN range 10.20.0.0/16 only, to preview the dev web app. Dev environment, no customer data.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "change_config",
+    "target": "staging Redis cache TTL",
+    "justification": "Reduce the staging Redis cache TTL from 3600 to 600 seconds to test cache invalidation. Reviewed in PR 509; staging only.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "add_server",
+    "target": "ci-runner-12",
+    "justification": "Add a CI runner from the hardened image to cut build queue times. Tagged owner build-infra, cost center CC-2090, added to the inventory.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "grant_access",
+    "target": "staging log bucket (read-only)",
+    "justification": "Give the QA lead read-only access to the staging log bucket for two weeks to triage failing tests. Manager approved, expires Dec 5.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "change_config",
+    "target": "dev DNS record for feature preview",
+    "justification": "Add an internal DNS A record for feature-preview.dev.internal pointing at the dev sandbox VM. Peer reviewed; dev only.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "open_port",
+    "target": "staging-db-02:5432",
+    "justification": "Allow TCP 5432 from the staging app subnet 10.30.4.0/24 only, so the staging API can reach the new staging Postgres replica. Peer reviewed and tested.",
+    "risk_level": "low",
+    "expected_risk": "low",
+    "expected_recommendation": "approve"
+  },
+  {
+    "type": "change_config",
+    "target": "prod load balancer idle timeout",
+    "justification": "Increase the production load balancer idle timeout from 60 to 120 seconds so long report downloads stop dropping. Rollback: revert to 60 seconds. Window Sunday 02:00.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "add_server",
+    "target": "prod-api-node-09",
+    "justification": "Add one production API node using the hardened image to handle holiday traffic. Owner checkout-team, cost center CC-3301, inventory entry created. Window Saturday 03:00; rollback by removing it from the pool.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "grant_access",
+    "target": "write access to prod-config-repo",
+    "justification": "Give engineer Sam write access to the production configuration repository to ship a pending certificate update. Needed this week. Manager approved but no expiry set.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "open_port",
+    "target": "prod-app-lb:443",
+    "justification": "Open HTTPS 443 on the new production load balancer for the partner API launch, limited to the partner's published IP ranges. Launch window Tuesday 06:00; rollback is closing the rule.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "change_config",
+    "target": "prod bastion SSH idle timeout",
+    "justification": "Reduce the idle SSH session timeout on production bastion hosts from 30 to 15 minutes per an audit finding. Peer reviewed and tested on the staging bastion.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "grant_access",
+    "target": "prod reporting replica (read-only)",
+    "justification": "Give the data analytics team read-only access to the production reporting replica for the quarterly report. Needed by Friday.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "change_config",
+    "target": "office firewall rule cleanup",
+    "justification": "Remove 14 unused firewall rules on the shared office firewall that have had no hits in 90 days. List attached to the ticket; peer reviewed.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "add_server",
+    "target": "shared-jump-host-02",
+    "justification": "Add a second jump host for the data team so they stop sharing one login. Uses the hardened image, owner data-platform, cost center CC-7010; has production network access.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "open_port",
+    "target": "vpn-gateway:1194",
+    "justification": "Open UDP 1194 on the VPN gateway for the new contractor VPN pool. Needed for onboarding next week. Contractors will authenticate with certificates.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "change_config",
+    "target": "prod Postgres connection limit",
+    "justification": "Raise max connections on the production Postgres primary from 200 to 400 to fix saturation at peak. Tested in staging; rollback by restoring the old setting. Window Sunday 01:00.",
+    "risk_level": "medium",
+    "expected_risk": "medium",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "open_port",
+    "target": "prod-db-01:5432",
+    "justification": "Open Postgres 5432 to 0.0.0.0/0 on the production database so our contractor can connect from home. They do not have a fixed IP.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "grant_access",
+    "target": "domain admin for contractor",
+    "justification": "Give contractor Alex permanent domain admin so they can fix things without waiting on tickets.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "change_config",
+    "target": "disable MFA on cloud admin console",
+    "justification": "Disable MFA on the cloud admin console for the on-call group because the codes are annoying during incidents.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "change_config",
+    "target": "disable audit logging on payments DB",
+    "justification": "Turn off audit logging on the production payments database; it is slowing down queries.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "open_port",
+    "target": "prod-bastion:22",
+    "justification": "Allow SSH 22 from any IP on the production bastion. Easier than keeping a VPN list updated.",
+    "risk_level": "medium",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "change_config",
+    "target": "API key in app config",
+    "justification": "Put the production payment provider API key directly in the app's config file in the repo so deploys are simpler.",
+    "risk_level": "low",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "change_config",
+    "target": "enable plain HTTP on customer portal",
+    "justification": "Enable plain HTTP and drop the redirect to HTTPS on the production customer portal because a legacy client fails on TLS.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "reject"
+  },
+  {
+    "type": "grant_access",
+    "target": "root on prod-db-01 for DBA team",
+    "justification": "Grant the DBA team root access on prod-db-01 to apply the scheduled vendor patch. Access expires in 24 hours, manager approved, window Sunday 02:00, rollback via a snapshot taken before patching.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "change_config",
+    "target": "delete legacy customer export bucket",
+    "justification": "Delete the legacy customer export storage bucket after migration. Backup verified Nov 12 and restore tested; data owner (Legal-Ops) signed off in CHG-8841. Window Saturday 22:00.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "escalate"
+  },
+  {
+    "type": "change_config",
+    "target": "rotate production wildcard TLS certificate",
+    "justification": "Replace the production wildcard TLS certificate ahead of expiry. Staged and tested on staging; rollback by reinstalling the previous certificate. Window Sunday 03:00.",
+    "risk_level": "high",
+    "expected_risk": "high",
+    "expected_recommendation": "escalate"
+  }
+]
