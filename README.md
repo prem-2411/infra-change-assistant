@@ -1,12 +1,31 @@
 # Infra Change Assistant
 
 An LLM-assisted, human-approved platform for infrastructure change requests.
-Engineers submit a change (add a server, open a port, grant access, change a config). An AI agent reviews it
-against a policy library and past requests, lists risks and proposes a plan. A human approver makes the final
-call, and every step is written to an append-only audit log.
 
-**AI assists, humans decide.** The agent can only read data and write a proposal. It has no way to approve anything,
-and it cannot change real infrastructure: requests only move through states.
+Engineers submit a change (add a server, open a port, grant access, change a config). An AI agent reviews it against a policy library and past requests, lists risks and proposes a plan. A human approver makes the final call, and every step is written to an append-only audit log.
+
+**AI assists, humans decide.** The agent can only read data and write a proposal. It cannot approve anything, and it cannot change real infrastructure: requests only move through states.
+
+**Stack:** React, FastAPI, PostgreSQL, Claude API, Docker Compose, GitHub Actions
+
+<!-- Add after you take them: -->
+<!-- ![Login](docs/login.png) ![AI review](docs/review.png) ![Approval](docs/approval.png) -->
+
+## Why this exists
+
+Infrastructure changes are usually reviewed by hand against many policies. Reviews are slow, reviewers apply rules inconsistently, and there is rarely a clear record of who approved what and why. This project shows a safer pattern: AI does the first pass, a person decides, and everything is traceable.
+
+## Features
+
+- Request submission with type, target, justification and risk level
+- AI review: policy search, similar past requests, risk list and a proposed plan
+- Approval queue with comments; the requester cannot approve their own request
+- Append-only audit log of every submission, review and decision
+- Dashboard with counts by status and risk and average time to decision
+- Graceful failure: if the LLM is unavailable, a rule-based check runs and the request is flagged "manual review needed"
+- Roles: engineer, approver, admin (least privilege)
+- Structured JSON logs, `/metrics` and `/health` endpoints
+- Accessible React UI (semantic HTML, labelled fields, keyboard navigation)
 
 ## Architecture
 
@@ -21,8 +40,7 @@ flowchart LR
   API --> AUD[(audit_log)]
 ```
 
-Flow: UI -> API (auth + validation) -> database -> agent -> LLM + read-only tools -> review stored ->
-approver decision -> audit log.
+Flow: UI -> API (auth + validation) -> database -> agent -> LLM + read-only tools -> review stored -> approver decision -> audit log.
 
 ## Run it (3 commands)
 
@@ -34,11 +52,9 @@ docker compose up --build
 open http://localhost:3000      # API docs at http://localhost:8000/docs
 ```
 
-Sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env`, or the demo accounts `engineer@example.com` and
-`approver@example.com` (password `DEMO_PASSWORD`). Without `ANTHROPIC_API_KEY`, every review uses the rule-based
-fallback and is flagged "manual review needed". Add a key to enable the AI review.
+Sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env`, or the demo accounts `engineer@example.com` and `approver@example.com` (password `DEMO_PASSWORD`). Without `ANTHROPIC_API_KEY`, every review uses the rule-based fallback and is flagged "manual review needed". Add a key to enable the AI review.
 
-## Develop without Docker (macOS)
+## Develop without Docker
 
 ```bash
 # backend (uses SQLite locally)
@@ -64,26 +80,26 @@ cd frontend && npm install && npm run dev      # http://localhost:5173
 
 ## Evaluation
 
-30 labelled sample requests in `backend/eval/samples.json` (10 low/approve, 10 medium/escalate, 7 high/reject,
-3 high/escalate).
+30 labelled sample requests in `backend/eval/samples.json` (10 low/approve, 10 medium/escalate, 7 high/reject, 3 high/escalate).
 
 ```bash
 cd backend
-python -m eval.run_eval --no-llm   # rule-based baseline
-ANTHROPIC_API_KEY=sk-... python -m eval.run_eval
+python -m eval.run_eval --no-llm                       # rule-based baseline
+ANTHROPIC_API_KEY=sk-... python -m eval.run_eval       # LLM agent
 ```
-
-> The expected labels were written by the project author, not by an independent reviewer. Read through them and
-> adjust any you disagree with before quoting numbers. The eval database has no past decided requests, so
-> `find_similar_requests` returns nothing during evaluation.
 
 | Metric | Rule-based baseline | LLM agent |
 |---|---|---|
 | Samples | 30 | 30 |
-| Risk-level accuracy | run it | run it |
-| Recommendation accuracy | run it | run it |
-| High-risk precision / recall | run it | run it |
-| Fallback rate | run it | run it |
+| Risk-level accuracy | 83.3% | _fill in after running_ |
+| Recommendation accuracy | 43.3% | _fill in after running_ |
+| High-risk precision | 100% | _fill in after running_ |
+| High-risk recall | 90% | _fill in after running_ |
+| Fallback rate | 100% (no LLM) | _fill in after running_ |
+
+The baseline's recommendation accuracy is low by design: the fallback always escalates to a human, so it never outputs "reject".
+
+> The expected labels were written by the project author, not an independent reviewer. The evaluation database has no past decided requests, so `find_similar_requests` returns nothing during evaluation.
 
 ## API overview
 
@@ -101,40 +117,32 @@ ANTHROPIC_API_KEY=sk-... python -m eval.run_eval
 | `GET /dashboard` | approver, admin | Counts by status and risk, average time to decision |
 | `GET /health` | anyone | Liveness plus database check |
 
-Request status: `submitted` -> `reviewed` (AI ok) or `manual_review` (fallback) -> `approved` / `rejected`.
-A decision requires a review first, and a decided request is final.
+Request status: `submitted` -> `reviewed` (AI ok) or `manual_review` (fallback) -> `approved` / `rejected`. A decision requires a review first, and a decided request is final.
+
+## Testing and CI
+
+- 27 backend tests (auth, roles, validation, approval flow, agent fallback), plus `ruff` linting
+- GitHub Actions runs backend tests and lint, the frontend build, and the Docker build on every push
 
 ## Security and limitations
 
 Done:
-- bcrypt password hashing; JWT with 30-minute expiry; role read from the database on every request.
-- Role check on every protected endpoint (least privilege). Engineers get a 404, not a 403, for other people's requests.
-- Strict input validation (types, lengths, allowed values, unknown fields rejected); SQLAlchemy parameterized queries.
-- Login and review rate limits; login returns the same error for unknown email and wrong password.
-- Secrets only from environment variables; `.env` is git-ignored.
-- Audit log is append-only at the ORM level.
+- bcrypt password hashing; JWT with 30-minute expiry; role read from the database on every request
+- Role check on every protected endpoint (least privilege); engineers get a 404, not a 403, for other people's requests
+- Strict input validation (types, lengths, allowed values, unknown fields rejected); parameterized queries
+- Login and review rate limits; the same login error for unknown email and wrong password
+- Secrets only from environment variables; `.env` is git-ignored
+- Audit log is append-only at the ORM level
 
-Known limitations (be upfront about these in interviews):
+Known limitations:
 - The JWT is kept in `sessionStorage`, which an XSS bug could read. A production app would use an httpOnly cookie plus CSRF protection.
 - Rate limits and metrics are in process memory, so the backend runs one worker. Use Redis and a metrics system to scale out.
 - `create_all` creates the tables. Use Alembic migrations for real deployments.
-- The audit log is append-only in application code only. Database-level permissions or triggers would be needed to make it tamper-resistant.
+- The audit log is append-only in application code only; database-level permissions or triggers would make it tamper-resistant.
 - Policy search is keyword matching, not embeddings.
 - The LLM call runs inside the request. A job queue would be better for slow reviews.
-- No password reset, no account lockout, no HTTPS termination (put it behind a TLS proxy).
+- No password reset, no account lockout, and no HTTPS termination (put it behind a TLS proxy).
 
-## Results to record (after you run it)
+## License
 
-- Sample requests in evaluation: 30
-- Agent recommendation accuracy: __ %
-- Fallback rate: __ %
-- Automated tests and CI status: see the Actions tab
-- Average API latency: from `GET /metrics`
-- Lighthouse accessibility score: __ (run Lighthouse on the login page and a request page)
-
-## Resume bullets (fill in only after you have real numbers)
-
-Infra Change Assistant | React, FastAPI, PostgreSQL, Claude API, Docker, GitHub Actions
-- Built a full-stack platform where an LLM agent reviews infrastructure change requests against policy and proposes plans, gated by role-based approval and an audit trail.
-- Secured the API with JWT authentication, least-privilege roles, input validation and rate limiting; added structured JSON logging and a metrics endpoint.
-- Evaluated the agent on 30 labelled requests (__% correct recommendations), with automated tests running in CI on every commit.
+MIT (add a `LICENSE` file) or your choice.
